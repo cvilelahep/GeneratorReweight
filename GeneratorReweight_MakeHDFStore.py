@@ -7,23 +7,23 @@ import uproot
 
 
 CAF_fNames = {}
-CAF_fNames["ND"] = {"FHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/ND_FHC_FV_[0-3][0-9].root",
-#                    "RHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/ND_RHC_FV_[0-3][0-9].root"}
-                    "RHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/ND_RHC_FV_0[0-9].root"} # For now use 1/4 of RHC stats
+CAF_fNames["ND"] = {"FHC" : "/storage/shared/cvilela/GeneratorReweight/ND_FHC_FV_[0-3][0-9].root",
+#                    "RHC" : "/storage/shared/cvilela/GeneratorReweight/ND_RHC_FV_[0-3][0-9].root"}
+                    "RHC" : "/storage/shared/cvilela/GeneratorReweight/ND_RHC_FV_0[0-9].root"} # For now use 1/4 of RHC stats
 
-CAF_fNames["FD_nonswap"] = {"FHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/FD_FHC_nonswap.root",
-                            "RHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/FD_RHC_nonswap.root"}
+CAF_fNames["FD_nonswap"] = {"FHC" : "/storage/shared/cvilela/GeneratorReweight/FD_FHC_nonswap.root",
+                            "RHC" : "/storage/shared/cvilela/GeneratorReweight/FD_RHC_nonswap.root"}
 
-CAF_fNames["FD_nueswap"] = {"FHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/FD_FHC_nueswap.root",
-                            "RHC" : "/gpfs/scratch/crfernandesv/GeneratorReweight/FD_RHC_nueswap.root"}
+CAF_fNames["FD_nueswap"] = {"FHC" : "/storage/shared/cvilela/GeneratorReweight/FD_FHC_nueswap.root",
+                            "RHC" : "/storage/shared/cvilela/GeneratorReweight/FD_RHC_nueswap.root"}
 
-NuWro_fName = "/gpfs/scratch/crfernandesv/GeneratorReweight/NuWroCAFTruth.root"
+NuWro_fName = "/storage/shared/cvilela/GeneratorReweight/NuWroCAFTruth.root"
 
 NuWro_files = glob.glob(NuWro_fName)
 
 def main() :
 
-    storeName = '/gpfs/scratch/crfernandesv/GeneratorReweight/GeneratorRW.h5'
+    storeName = '/storage/shared/cvilela/GeneratorReweight/GeneratorRW.h5'
     trainFraction = 0.8
 
     try :

@@ -13,7 +13,7 @@ def main() :
 #    maxRows = 50000
     trainFraction = 0.8
 
-    storeName = '/gpfs/scratch/crfernandesv/GeneratorReweight/GeneratorRW.h5'
+    storeName = '/storage/shared/cvilela/GeneratorReweight/GeneratorRW.h5'
 
     store = pd.HDFStore(storeName, 'r')
 
@@ -127,12 +127,16 @@ def main() :
 
         dataTrain = xgb.DMatrix(dfTrain, label=labelsTrain, weight = weightsTrain)
 
+        del dfTrain, labelsTrain, weightsTrain
+
         labelsTest = dfTest["label"]
         dfTest.drop(columns = ["label"], inplace = True)
         weightsTest = dfTest["weight"]
         dfTest.drop(columns = ["weight"], inplace = True)
 
         dataTest = xgb.DMatrix(dfTest, label=labelsTest, weight = weightsTest)
+
+        del dfTest, labelsTest, weightsTest
 
         evals = [(dataTrain, "train"), (dataTest, "test")]
         testEvalsResult = {}
@@ -145,13 +149,13 @@ def main() :
             model = xgb.train(params = params, dtrain = dataTrain, num_boost_round = 500, evals = evals, evals_result = eval_result[-1] , verbose_eval = 5, xgb_model = model)
     
     try :
-        os.remove("/gpfs/scratch/crfernandesv/GeneratorReweight/GeneratorRW.xgb")
+        os.remove("/storage/shared/cvilela/GeneratorReweight/GeneratorRW.xgb")
     except OSError :
         pass
 
     if model :
-        model.save_model("/gpfs/scratch/crfernandesv/GeneratorReweight/GeneratorRW.xgb")
-    pickle.dump(eval_result, open("/gpfs/scratch/crfernandesv/GeneratorReweight/GeneratorRW.eval.p", "w"))
+        model.save_model("/storage/shared/cvilela/GeneratorReweight/GeneratorRW.xgb")
+    pickle.dump(eval_result, open("/storage/shared/cvilela/GeneratorReweight/GeneratorRW.eval.p", "w"))
 
 if __name__ == "__main__" :
     main()
