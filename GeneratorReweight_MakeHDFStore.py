@@ -48,14 +48,14 @@ def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
                 EMmask = treeArr["pdg"] == 22
 
                 othermask = (Numask + Lepmask + Pmask + Nmask + Pipmask + Pimmask + Pi0mask + Kpmask + Kmmask + K0mask + EMmask) == False
-                
+
                 treeArr["nP"] = ak.count_nonzero(Pmask, axis = 1)
                 treeArr["nN"] = ak.count_nonzero(Nmask, axis = 1)
                 treeArr["nipip"] = ak.count_nonzero(Pipmask, axis = 1)
-                treeArr["nipim"] = ak.count_nonzero(Pimmask == -211, axis = 1)
-                treeArr["nipi0"] = ak.count_nonzero(Pi0mask == 111, axis = 1)
-                treeArr["nikp"] = ak.count_nonzero(Kpmask == 321, axis = 1)
-                treeArr["nikm"] = ak.count_nonzero(Kmmask == -321, axis = 1)
+                treeArr["nipim"] = ak.count_nonzero(Pimmask, axis = 1)
+                treeArr["nipi0"] = ak.count_nonzero(Pi0mask, axis = 1)
+                treeArr["nikp"] = ak.count_nonzero(Kpmask, axis = 1)
+                treeArr["nikm"] = ak.count_nonzero(Kmmask, axis = 1)
                 treeArr["nik0"] = ak.count_nonzero(K0mask, axis = 1)
                 treeArr["niem"] = ak.count_nonzero(EMmask, axis = 1)
 
@@ -68,15 +68,21 @@ def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
                 treeArr["eOther"] = ak.sum(treeArr["E"][othermask] - (treeArr["E"][othermask]**2-treeArr["px"][othermask]**2-treeArr["py"][othermask]**2-treeArr["pz"][othermask]**2)**0.5, axis = 1)
 
                 treeArr["isNu"] = treeArr["PDGnu"] > 0
-
                 treeArr["isNue"] = abs(treeArr["PDGnu"]) == 12
                 treeArr["isNumu"] = abs(treeArr["PDGnu"]) == 14
                 treeArr["isNutau"] = abs(treeArr["PDGnu"]) == 16
 
-                data = ak.to_numpy(treeArr[["isNu", "isNue", "isNumu", "isNutau", "cc", "Enu_true", "ELep", "CosLep", "Q2", "W", "x", "y", "nP", "nN", "nipip", "nipim", "nipi0", "niem", "eP", "eN", "ePip", "ePim", "ePi0", "eOther"]]) 
-
+                varOut = ["isNu", "isNue", "isNumu", "isNutau", "cc", "Enu_true", "ELep", "CosLep", "Q2", "W", "x", "y", "nP", "nN", "nipip", "nipim", "nipi0", "niem", "eP", "eN", "ePip", "ePim", "ePi0"] #, "eOther"]
+                
+                treeArr = ak.values_astype(treeArr[varOut], np.float32)
+                
+                data = ak.to_numpy(treeArr)
+                data = data.view(np.float32).reshape((len(data), len(varOut)))
+                
+                print(data.shape)
+                
                 split = int(trainFraction*len(data))
-
+                
                 if i == 0 :
                     # Create hdf5 dataset
                     hf.create_dataset("train_data", data = data[:split])

@@ -5,7 +5,6 @@ import math
 
 import pickle
 import numpy as np
-import pandas as pd
 import xgboost as xgb
 
 def main() :
@@ -32,7 +31,7 @@ def main() :
     samples_for_df = { "generator" : [],
                        "runmode"   : [],
                        "detector"  : [],
-                       "species"   : [] ,
+                       "species"   : [],
                        "nrows"     : [] }
     
     for generator, sample in samples.iteritems() :
