@@ -17,13 +17,12 @@ m["k0"] = 0.49764
 
 samples = {}
 
-sampledir = "/disk/cvilela/GeneratorReweight/Samples/"
-
-samples["argon_GENIEv2"] = sampledir+"nuisflat_argon_GENIEv2.root"
-samples["argon_GENIEv3_G18_10a_02_11a"] = sampledir+"argon_GENIEv3_G18_10a_02_11a"
-samples["argon_GENIEv3_G18_10b_00_000"] = sampledir+"nuisflat_argon_GENIEv3_G18_10b_00_000.root"
-samples["argon_NEUT"] = sampledir+"nuisflat_argon_NEUT.root"
-samples["argon_NUWRO"] = sampledir+"nuisflat_argon_NUWRO.root"
+sampledir = "/disk/cvilela/GeneratorReweight/LargeSamples/"
+#samples["argon_GENIEv2"] = sampledir+"flat_argon_*_GENIEv2*"
+#samples["argon_GENIEv3_G18_10a_02_11a"] = sampledir+"flat_argon_*_GENIEv3_G18_10a_02_11a*"
+#samples["argon_GENIEv3_G18_10b_00_000"] = sampledir+"flat_argon_*_GENIEv3_G18_10b_00_000*"
+#samples["argon_NEUT"] = sampledir+"flat_argon_*_NEUT*"
+samples["argon_NUWRO"] = sampledir+"flat_argon_*_NUWRO*"
 
 def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
 
@@ -32,7 +31,8 @@ def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
 
     with h5py.File(fNameh5, 'w') as hf:
         for i, fName in enumerate(glob.glob(fNameNuis)) :
-            with uproot4.open(fNameNuis+":GenericVectors_flat_VARS") as tree :
+            with uproot4.open(fName+":FlatTree_VARS") as tree :
+                print("Reading {0}".format(fName))
                 treeArr = tree.arrays(nuisReadVars)
 
                 Lepmask = (treeArr["pdg"] == 11) + (treeArr["pdg"] == -11) + (treeArr["pdg"] == 13) + (treeArr["pdg"] == -13) + (treeArr["pdg"] == 15) + (treeArr["pdg"] == -15)
@@ -85,8 +85,8 @@ def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
                 
                 if i == 0 :
                     # Create hdf5 dataset
-                    hf.create_dataset("train_data", data = data[:split])
-                    hf.create_dataset("test_data", data = data[split:])
+                    hf.create_dataset("train_data", data = data[:split],maxshape = (None, len(varOut)), chunks = True)
+                    hf.create_dataset("test_data", data = data[split:], maxshape = (None, len(varOut)), chunks = True)
                 else :
                     # Extend existing dataset
                     hf["train_data"].resize((hf["train_data"].shape[0] + data[:split].shape[0]), axis = 0)
@@ -99,7 +99,7 @@ def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
 def main() :
 
     for sample, fName in samples.items() :
-        nuisflatToH5(fName, sample+".h5", 0.8)
+        nuisflatToH5(fName, sampledir+"/"+sample+".h5", 0.9)
 
 
 nuisReadVars = ["cc",

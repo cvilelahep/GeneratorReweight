@@ -63,7 +63,7 @@ def trainXGB(originh5, originName, targeth5, targetName) :
 
     
 def main() :
-    trainXGB("argon_GENIEv2.h5", "GENIEv2", "argon_NUWRO.h5", "NUWRO")
+    trainXGB("/disk/cvilela/GeneratorReweight/LargeSamples/argon_GENIEv2.h5", "GENIEv2", "/disk/cvilela/GeneratorReweight/LargeSamples/argon_NUWRO.h5", "NUWRO")
 
 if __name__ == "__main__" :
     main()
