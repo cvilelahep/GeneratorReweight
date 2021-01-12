@@ -6,30 +6,44 @@ import xgboost as xgb
 
 def trainXGB(originh5, originName, targeth5, targetName) :
 
+    use_frac = 0.5
+
     fOrigin = h5py.File(originh5, "r")
     fTarget = h5py.File(targeth5, "r")
 
     nTrainOrigin = len(fOrigin["train_data"])
     nTrainTarget = len(fTarget["train_data"])
+
+    nUseTrainOrigin = int(use_frac*nTrainOrigin)
+    nUseTrainTarget = int(use_frac*nTrainTarget)
+
+    print(nTrainOrigin, nTrainTarget)
     
-    trainData = np.concatenate((fOrigin["train_data"], fTarget["train_data"]))
-    trainLabels = [[0]]*nTrainOrigin+[[1]]*nTrainTarget
+    trainData = np.concatenate((fOrigin["train_data"][:nUseTrainOrigin], fTarget["train_data"][:nUseTrainTarget]))
+    print("Concatenation DONE")
+    #trainLabels = [[0]]*nTrainOrigin+[[1]]*nTrainTarget
+    trainLabels = [[0]]*nUseTrainOrigin+[[1]]*nUseTrainTarget
+    print("trainLabels DONE")
+    xgb_train_data = xgb.DMatrix(trainData, label = trainLabels)
+    print("DMatrix DONE")
+    del trainData, trainLabels
+    print("Deleted numpy arrays")
 
     nTestOrigin = len(fOrigin["test_data"])
     nTestTarget = len(fTarget["test_data"])
     
     testData = np.concatenate((fOrigin["test_data"], fTarget["test_data"]))
     testLabels = [[0]]*nTestOrigin+[[1]]*nTestTarget
-
-    xgb_train_data = xgb.DMatrix(trainData, label = trainLabels)
     xgb_test_data = xgb.DMatrix(testData, label = testLabels)
+    del testData, testLabels
     
     params = {}
-    params['nthread'] = 16
+    params['nthread'] = 12
     params["tree_method"] = "auto"
 #    params['gpu_id'] = 0
 #    params["tree_method"] = "gpu_hist"
     params["objective"] = 'reg:logistic'
+#    params["objective"] = 'binary:logitraw'
     params["eta"] = 0.3
     params["max_depth"] = 6
     params["min_child_weight"] = 100
@@ -42,12 +56,12 @@ def trainXGB(originh5, originName, targeth5, targetName) :
     params["update"] = "grow_colmaker,prune,refresh"
     params["refresh_leaf"] = True
     params["process_type"] = "default"
-
+    params["eval_metric"] = "logloss"
     evals = [(xgb_train_data, "train"), (xgb_test_data, "test")]
     eval_result = {}
     model = None
 
-    model = xgb.train(params = params, dtrain = xgb_train_data, num_boost_round = 1000, evals = evals, evals_result = eval_result , verbose_eval = 5)
+    model = xgb.train(params = params, dtrain = xgb_train_data, num_boost_round = 1000, evals = evals, evals_result = eval_result , verbose_eval = 5, early_stopping_rounds=10)
 
     modelName = "bdtrw_"+originName+"_to_"+targetName
     
@@ -63,7 +77,7 @@ def trainXGB(originh5, originName, targeth5, targetName) :
 
     
 def main() :
-    trainXGB("/disk/cvilela/GeneratorReweight/LargeSamples/argon_GENIEv2.h5", "GENIEv2", "/disk/cvilela/GeneratorReweight/LargeSamples/argon_NUWRO.h5", "NUWRO")
+    trainXGB("/gpfs/scratch/crfernandesv/GeneratorReweight/argon_GENIEv2.h5", "GENIEv2", "/gpfs/scratch/crfernandesv/GeneratorReweight/argon_NUWRO.h5", "NUWRO")
 
 if __name__ == "__main__" :
     main()
