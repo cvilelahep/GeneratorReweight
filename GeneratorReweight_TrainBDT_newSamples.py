@@ -3,25 +3,76 @@ import pickle
 import h5py
 import numpy as np
 import xgboost as xgb
+import random
+
+def randomSampleLarge(N, frac, chunk) :
+    n = int(N/chunk)
+    remainder = N%chunk
+
+    print(n, remainder)
+    
+    ret = []
+    
+    for i_chunk in range(n) :
+        ret += list(np.sort(random.sample(range(i_chunk*chunk, (i_chunk+1)*chunk), int(chunk*frac))))
+    if remainder > 0 :
+        ret += list(np.sort(random.sample(range(n*chunk, n*chunk+remainder), int(remainder*frac))))
+    
+    return ret
+        
 
 def trainXGB(originh5, originName, targeth5, targetName) :
 
+    use_fraction = 0.005
+    
     fOrigin = h5py.File(originh5, "r")
     fTarget = h5py.File(targeth5, "r")
 
-    nTrainOrigin = len(fOrigin["train_data"])
-    nTrainTarget = len(fTarget["train_data"])
+    nTrainOrigin_raw = len(fOrigin["train_data"])
+    nTrainTarget_raw = len(fTarget["train_data"])
+
+    indices_train_origin = randomSampleLarge(nTrainOrigin_raw, use_fraction, 10000)
+    indices_train_target = randomSampleLarge(nTrainTarget_raw, use_fraction, 10000)
+
+    nTrainOrigin = len(indices_train_origin)
+    nTrainTarget = len(indices_train_target)
     
-    trainData = np.concatenate((fOrigin["train_data"], fTarget["train_data"]))
+    print(nTrainOrigin_raw, nTrainTarget_raw, nTrainOrigin, nTrainTarget)
+        
+    trainData = np.concatenate((fOrigin["train_data"][indices_train_origin], fTarget["train_data"][indices_train_target]))
+
+    print("Done concatenating")
+
+    
+    del indices_train_origin, indices_train_origin
+
     trainLabels = [[0]]*nTrainOrigin+[[1]]*nTrainTarget
 
-    nTestOrigin = len(fOrigin["test_data"])
-    nTestTarget = len(fTarget["test_data"])
+    print("Got labels")
     
-    testData = np.concatenate((fOrigin["test_data"], fTarget["test_data"]))
+    xgb_train_data = xgb.DMatrix(trainData, label = trainLabels)
+
+    print("Got train data")
+    
+    exit()
+    
+    nTestOrigin_raw = len(fOrigin["test_data"])
+    nTestTarget_raw = len(fTarget["test_data"])
+
+    nTestOrigin = int(use_fraction*nTestOrigin_raw)
+    nTestTarget = int(use_fraction*nTestTarget_raw)
+
+    indices_test_origin = np.random.randint(low = 0, high = nTestOrigin_raw, size = nTestOrigin)
+    indices_test_origin.sort()
+    indices_test_target = np.random.randint(low = 0, high = nTestTarget_raw, size = nTestOrigin)
+    indices_test_target.sort()
+    
+    print("Number of events:\nTrain {0} + {1}\nTest {2} + {3}".format(nTrainOrigin, nTrainTarget, nTestOrigin, nTestTarget))
+    
+    testData = np.concatenate((fOrigin["test_data"][indices_test_origin], fTarget["test_data"][indices_test_target]))
     testLabels = [[0]]*nTestOrigin+[[1]]*nTestTarget
 
-    xgb_train_data = xgb.DMatrix(trainData, label = trainLabels)
+
     xgb_test_data = xgb.DMatrix(testData, label = testLabels)
     
     params = {}
@@ -47,7 +98,7 @@ def trainXGB(originh5, originName, targeth5, targetName) :
     eval_result = {}
     model = None
 
-    model = xgb.train(params = params, dtrain = xgb_train_data, num_boost_round = 1000, evals = evals, evals_result = eval_result , verbose_eval = 5)
+    model = xgb.train(params = params, dtrain = xgb_train_data, num_boost_round = 5000, evals = evals, evals_result = eval_result , verbose_eval = 5, early_stopping_rounds=10)
 
     modelName = "bdtrw_"+originName+"_to_"+targetName
     
