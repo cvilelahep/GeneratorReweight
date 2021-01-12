@@ -35,6 +35,20 @@ vars_meta = [ ["isNu", 2, 0, 1],
               ["eOther", manyBins-1, 1/manyBins, 5] ]
               
 
+Enu_slices = [[0., 1.],
+              [1., 2.],
+              [2., 3.],
+              [3., 4.],
+              [4., 5.],
+              [5., 6.],
+              [6., 7.],
+              [7., 8.],
+              [8., 9.],
+              [9., 10.]]
+
+nu_type = [12, -12, 14, -14]
+
+
 def makePlots(originh5, originName, targeth5, targetName) :
 
     modelName = "bdtrw_"+originName+"_to_"+targetName
@@ -61,15 +75,54 @@ def makePlots(originh5, originName, targeth5, targetName) :
     marginsTarget = model.predict(xgbTestTargetData, output_margin = True)
     probTarget = 1/(1+np.exp(-1*marginsTarget))
 
+    norm = float(len(testOriginData[:,0]))/len(testTargetData[:,0])
+    print("RELATIVE NORMALIZATION {0}".format(norm))
+    
+    # Overall plots
     for i in range(len(testOriginData[0])) :
         plt.hist(testOriginData[:,i], histtype = 'step', label = 'origin', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
-        plt.hist(testTargetData[:,i], histtype = 'step', label = 'target', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
+        plt.hist(testTargetData[:,i], weights = [norm]*len(testTargetData[:,0]), histtype = 'step', label = 'target', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
         plt.hist(testOriginData[:,i], weights = weights, histtype = 'step', label = 'reweighted', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
         plt.legend()
         plt.xlabel(vars_meta[i][0])
         plt.savefig("Plots/{0}/{0}_{1}.png".format(modelName, i))
         plt.clf()
 
+    # Broken down plots (in energy bins and by neutrino type)
+    for e_bin, e_range in enumerate(Enu_slices) :
+        for nu in nu_type :
+            print(nu, e_bin)
+            thisDir = "Plots/{0}/Nu_type_{1}_Ebin_{2}/".format(modelName, nu, e_bin)
+            os.makedirs(thisDir)
+            for i in range(len(testOriginData[0])) :
+                selOrigin = np.logical_and(testOriginData[:,5] >= e_range[0], testOriginData[:,5] < e_range[1])
+                selTarget = np.logical_and(testTargetData[:,5] >= e_range[0], testTargetData[:,5] < e_range[1])
+                if nu > 0 :
+                    selOrigin = np.logical_and(selOrigin, testOriginData[:,0] > 0.5)
+                    selTarget = np.logical_and(selTarget, testTargetData[:,0] > 0.5)
+                else :
+                    selOrigin = np.logical_and(selOrigin, testOriginData[:,0] < 0.5)
+                    selTarget = np.logical_and(selTarget, testTargetData[:,0] < 0.5)
+
+                if abs(nu) == 12 :
+                    selOrigin = np.logical_and(selOrigin, testOriginData[:,1] > 0.5)
+                    selTarget = np.logical_and(selTarget, testTargetData[:,1] > 0.5)
+                elif abs(nu) == 14 :
+                    selOrigin = np.logical_and(selOrigin, testOriginData[:,2] > 0.5)
+                    selTarget = np.logical_and(selTarget, testTargetData[:,2] > 0.5)
+                elif abs(nu) == 16 :
+                    selOrigin = np.logical_and(selOrigin, testOriginData[:,3] > 0.5)
+                    selTarget = np.logical_and(selTarget, testTargetData[:,3] > 0.5)
+                    
+                plt.hist(testOriginData[:,i][selOrigin], histtype = 'step', label = 'origin', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
+                plt.hist(testTargetData[:,i][selTarget], weights = [norm]*len(testTargetData[:,0][selTarget]), histtype = 'step', label = 'target', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
+                plt.hist(testOriginData[:,i][selOrigin], weights = weights[selOrigin], histtype = 'step', label = 'reweighted', bins = vars_meta[i][1], range = (vars_meta[i][2], vars_meta[i][3]))
+                plt.legend()
+                plt.xlabel(vars_meta[i][0])
+                plt.savefig("{0}/{1}_{2}.png".format(thisDir, modelName, i))
+                plt.clf()
+            
+            
     plt.figure()
     hOrigin, bins, patches = plt.hist(prob, bins = 600, range = (-0.1, 1.1), label = 'origin')
     hTarget, bins, patches = plt.hist(probTarget, bins = 600, range = (-0.1, 1.1), label = 'target')

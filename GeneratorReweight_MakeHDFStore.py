@@ -6,6 +6,7 @@ import numpy as np
 import uproot4
 import h5py
 import awkward1 as ak
+import random
 
 m = {}
 m["P"] = 0.93827
@@ -18,11 +19,12 @@ m["k0"] = 0.49764
 samples = {}
 
 sampledir = "/disk/cvilela/GeneratorReweight/LargeSamples/"
-#samples["argon_GENIEv2"] = sampledir+"flat_argon_*_GENIEv2*"
-#samples["argon_GENIEv3_G18_10a_02_11a"] = sampledir+"flat_argon_*_GENIEv3_G18_10a_02_11a*"
-#samples["argon_GENIEv3_G18_10b_00_000"] = sampledir+"flat_argon_*_GENIEv3_G18_10b_00_000*"
-#samples["argon_NEUT"] = sampledir+"flat_argon_*_NEUT*"
-samples["argon_NUWRO"] = sampledir+"flat_argon_*_NUWRO*"
+samples["argon_GENIEv2"] = sampledir+"flat_argon_*_GENIEv2*.root"
+#samples["argon_GENIEv3_G18_10a_02_11a"] = sampledir+"flat_argon_*_GENIEv3_G18_10a_02_11a*.root"
+#samples["argon_GENIEv3_G18_10b_00_000"] = sampledir+"flat_argon_*_GENIEv3_G18_10b_00_000*.root"
+samples["argon_NEUT"] = sampledir+"flat_argon_*_NEUT*.root"
+#samples["argon_NUWRO"] = sampledir+"flat_argon_*_NUWRO.root"
+
 
 def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
 
@@ -30,7 +32,10 @@ def nuisflatToH5(fNameNuis, fNameh5, trainFraction) :
         os.remove(fNameh5)
 
     with h5py.File(fNameh5, 'w') as hf:
-        for i, fName in enumerate(glob.glob(fNameNuis)) :
+        fileList = glob.glob(fNameNuis)
+        random.shuffle(fileList)
+        
+        for i, fName in enumerate(fileList) :
             with uproot4.open(fName+":FlatTree_VARS") as tree :
                 print("Reading {0}".format(fName))
                 treeArr = tree.arrays(nuisReadVars)

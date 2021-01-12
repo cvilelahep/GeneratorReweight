@@ -3,6 +3,23 @@ import pickle
 import h5py
 import numpy as np
 import xgboost as xgb
+import random
+
+def randomSampleLarge(N, frac, chunk) :
+    n = int(N/chunk)
+    remainder = N%chunk
+
+    print(n, remainder)
+    
+    ret = []
+    
+    for i_chunk in range(n) :
+        ret += list(np.sort(random.sample(range(i_chunk*chunk, (i_chunk+1)*chunk), int(chunk*frac))))
+    if remainder > 0 :
+        ret += list(np.sort(random.sample(range(n*chunk, n*chunk+remainder), int(remainder*frac))))
+    
+    return ret
+        
 
 def trainXGB(originh5, originName, targeth5, targetName) :
 
@@ -29,11 +46,28 @@ def trainXGB(originh5, originName, targeth5, targetName) :
     del trainData, trainLabels
     print("Deleted numpy arrays")
 
-    nTestOrigin = len(fOrigin["test_data"])
-    nTestTarget = len(fTarget["test_data"])
+    print("Got labels")
     
-    testData = np.concatenate((fOrigin["test_data"], fTarget["test_data"]))
+    xgb_train_data = xgb.DMatrix(trainData, label = trainLabels)
+
+    print("Got train data")
+    
+    nTestOrigin_raw = len(fOrigin["test_data"])
+    nTestTarget_raw = len(fTarget["test_data"])
+
+    nTestOrigin = int(use_fraction*nTestOrigin_raw)
+    nTestTarget = int(use_fraction*nTestTarget_raw)
+
+    indices_test_origin = np.random.randint(low = 0, high = nTestOrigin_raw, size = nTestOrigin)
+    indices_test_origin.sort()
+    indices_test_target = np.random.randint(low = 0, high = nTestTarget_raw, size = nTestOrigin)
+    indices_test_target.sort()
+    
+    print("Number of events:\nTrain {0} + {1}\nTest {2} + {3}".format(nTrainOrigin, nTrainTarget, nTestOrigin, nTestTarget))
+    
+    testData = np.concatenate((fOrigin["test_data"][indices_test_origin], fTarget["test_data"][indices_test_target]))
     testLabels = [[0]]*nTestOrigin+[[1]]*nTestTarget
+
     xgb_test_data = xgb.DMatrix(testData, label = testLabels)
     del testData, testLabels
     
